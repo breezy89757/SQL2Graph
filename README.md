@@ -15,9 +15,9 @@
 - **自動產生 Cypher** — DDL (Constraints/Index) + ETL (資料遷移腳本)
 - **中文支援** — 描述和推理解釋使用繁體中文
 
-## 📸 無 FK 也能推斷關係
+## 📸 隱式關聯推論 (Implicit Relationship Inference)
 
-下圖展示了一個**完全沒有 Foreign Key 定義**的資料庫，SQL2Graph 透過分析 Sample Data 成功推斷出所有隱藏關係：
+下圖展示了一個**缺乏外鍵約束 (Foreign Key Constraints)** 的資料庫結構。SQL2Graph 透過 **語意資料分析 (Semantic Data Analysis)** 技術，結合 Schema 定義與取樣資料，成功識別出潛在的實體關聯 (Latent Entity Relationships)：
 
 ![無 FK 推斷展示](docs/withoutFK.png)
 
