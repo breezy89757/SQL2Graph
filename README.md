@@ -12,6 +12,7 @@
 - **LLM 智能分析** — 使用 Azure OpenAI 理解語意，產生最佳 Graph Model
 - **Sample Data 推斷** — 即使沒有 FK 定義，也能從資料內容推斷隱藏關係
 - **互動式視覺化** — 力導向圖，節點可拖拉，連線會 highlight
+- **一鍵 CSV 匯出** — 自動打包 CSV 資料檔，支援大檔案下載，簡化 Neo4j 匯入流程
 - **自動產生 Cypher** — DDL (Constraints/Index) + ETL (資料遷移腳本)
 - **中文支援** — 描述和推理解釋使用繁體中文
 
@@ -20,6 +21,12 @@
 下圖展示了一個**缺乏外鍵約束 (Foreign Key Constraints)** 的資料庫結構。SQL2Graph 透過 **語意資料分析 (Semantic Data Analysis)** 技術，結合 Schema 定義與取樣資料，成功識別出潛在的實體關聯 (Latent Entity Relationships)：
 
 ![無 FK 推斷展示](docs/withoutFK.png)
+
+## 📊 Neo4j 匯入成果與驗證
+
+下圖為實際匯入 Neo4j 後的查詢結果 (`MATCH (n) RETURN n`)。可以看到即使來源資料庫**完全沒有 Foreign Key**，透過 SQL2Graph 推斷出的 Graph Model 依然建立了正確的關聯（如 `WORKS_ON`, `HAS_LEADER`, `REPORTS_TO`）：
+
+![Neo4j 匯入成果](docs/neo4J.png)
 
 ---
 
@@ -35,6 +42,7 @@
 | **解釋設計決策** | ❌ | ✅ 推理面板 |
 | 視覺化預覽 | ⚠️ 需另開工具 | ✅ 內建力導向圖 |
 | 產生 Cypher DDL/ETL | ✅ | ✅ |
+| **資料匯出** | ⚠️ 手動或複雜配置 | ✅ **一鍵打包 CSV** |
 
 ### 技術實現差異
 
@@ -78,7 +86,7 @@ copy appsettings.template.json appsettings.json
 dotnet run
 ```
 
-打開瀏覽器：`http://localhost:5000`
+打開瀏覽器：`http://localhost:5050` (預設)
 
 ### 3. 連接資料庫並分析
 
@@ -86,6 +94,16 @@ dotnet run
 2. 勾選「🔍 取樣資料分析」（推薦）
 3. 點擊「開始分析」
 4. 查看 Graph Model 視覺化和 Cypher 腳本
+
+### 4. 匯出與遷移
+
+1. 切換至「ETL」分頁
+2. 點擊「📥 下載 CSV 資料包」
+3. 將 ZIP 解壓縮並複製 CSV 至 Neo4j Import 目錄：
+   ```bash
+   docker cp ./extracted_files/. neo4j:/var/lib/neo4j/import/
+   ```
+4. 複製並在 Neo4j Browser (`http://localhost:7474`) 執行 ETL Cypher 腳本
 
 ---
 
@@ -99,12 +117,6 @@ docker run -d --name neo4j \
   -e NEO4J_AUTH=neo4j/password123 \
   neo4j:latest
 ```
-
-### 執行遷移
-
-1. 在 Neo4j Browser (`http://localhost:7474`) 執行 DDL 腳本
-2. 從 MSSQL 匯出 CSV
-3. 執行 ETL 腳本匯入資料
 
 ---
 
@@ -129,14 +141,17 @@ SQL2Graph/
 ├── Services/
 │   ├── SchemaReaderService.cs  # 讀取 MSSQL Schema + Sample Data
 │   ├── LlmAnalysisService.cs   # LLM 分析
-│   └── GraphModelService.cs    # Cypher 產生
+│   ├── GraphModelService.cs    # Cypher 產生
+│   └── CsvExportService.cs     # CSV 打包下載
 ├── Models/
 │   ├── SqlSchema.cs            # SQL 結構定義
 │   └── GraphModel.cs           # Graph 結構定義
 ├── wwwroot/
 │   ├── app.css                 # 樣式
 │   ├── guide.html              # Graph DB 教學指南
-│   └── js/graphVisualizer.js   # Cytoscape.js 封裝
+│   └── js/
+│       ├── graphVisualizer.js  # Cytoscape.js 封裝
+│       └── download.js         # 檔案下載 Helper
 └── docs/
     └── withoutFK.png           # 展示截圖
 ```

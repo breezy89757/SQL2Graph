@@ -11,6 +11,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddScoped<SchemaReaderService>();
 builder.Services.AddScoped<LlmAnalysisService>();
 builder.Services.AddScoped<GraphModelService>();
+builder.Services.AddScoped<CsvExportService>();
 
 var app = builder.Build();
 

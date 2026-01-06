@@ -74,7 +74,8 @@ public class GraphModelService
         foreach (var node in model.Nodes)
         {
             sb.AppendLine($"// Create {node.Label} nodes from {node.SourceTable}");
-            sb.AppendLine($"LOAD CSV WITH HEADERS FROM 'file:///{node.SourceTable.Replace(".", "_")}.csv' AS row");
+            var tableName = node.SourceTable.Contains(".") ? node.SourceTable.Replace(".", "_") : $"dbo_{node.SourceTable}";
+            sb.AppendLine($"LOAD CSV WITH HEADERS FROM 'file:///{tableName}.csv' AS row");
             sb.Append($"CREATE (n:{node.Label} {{");
             
             var propStrings = node.Properties.Select(p => 
@@ -97,7 +98,8 @@ public class GraphModelService
             var toKey = toNode.Properties.FirstOrDefault(p => p.IsKey)?.GraphProperty ?? "id";
 
             sb.AppendLine($"// Create {rel.Type} relationships");
-            sb.AppendLine($"LOAD CSV WITH HEADERS FROM 'file:///{rel.SourceTable.Replace(".", "_")}.csv' AS row");
+            var relTableName = rel.SourceTable.Contains(".") ? rel.SourceTable.Replace(".", "_") : $"dbo_{rel.SourceTable}";
+            sb.AppendLine($"LOAD CSV WITH HEADERS FROM 'file:///{relTableName}.csv' AS row");
             sb.AppendLine($"MATCH (from:{rel.FromNode} {{{fromKey}: row.from_id}})");
             sb.AppendLine($"MATCH (to:{rel.ToNode} {{{toKey}: row.to_id}})");
             

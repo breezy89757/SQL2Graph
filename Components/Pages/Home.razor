@@ -4,6 +4,7 @@
 @inject SchemaReaderService SchemaReader
 @inject LlmAnalysisService LlmAnalysis
 @inject GraphModelService GraphService
+@inject CsvExportService CsvExport
 @inject IJSRuntime JS
 
 <div class="home-container">
@@ -169,6 +170,19 @@
                         }
                         else if (activeTab == "etl")
                         {
+                            <div class="code-actions" style="margin-bottom: 10px; display: flex; gap: 10px;">
+                                <button class="btn btn-secondary btn-sm" @onclick="DownloadCsvZip" disabled="@isExporting">
+                                    @if (isExporting)
+                                    {
+                                        <span class="spinner-sm"></span>
+                                        <span>打包中...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>📥 下載 CSV 資料包 (.zip)</span>
+                                    }
+                                </button>
+                            </div>
                             <pre><code>@analysisResult.CypherETL</code></pre>
                         }
                         else
@@ -191,7 +205,8 @@
     private bool isConnected = false;
     private bool isTestingConnection = false;
     private bool isAnalyzing = false;
-    private bool isProcessing => isTestingConnection || isAnalyzing;
+    private bool isExporting = false;
+    private bool isProcessing => isTestingConnection || isAnalyzing || isExporting;
     private int currentStep = 1;
     private bool includeSampleData = true;
     private string analysisStatus = "分析中，請稍候...";
@@ -274,6 +289,32 @@
     private void SelectTable(string tableName)
     {
         selectedTable = selectedTable == tableName ? null : tableName;
+    }
+
+    private async Task DownloadCsvZip()
+    {
+        if (sqlSchema == null || sqlSchema.Tables.Count == 0) return;
+
+        try
+        {
+            isExporting = true;
+            StateHasChanged();
+
+            using var stream = await CsvExport.ExportTablesToZipAsync(connectionString, sqlSchema.Tables);
+            var fileName = $"neo4j_import_{DateTime.Now:yyyyMMddHHmmss}.zip";
+            
+            using var streamRef = new DotNetStreamReference(stream);
+            await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"匯出失敗: {ex.Message}");
+        }
+        finally
+        {
+            isExporting = false;
+            StateHasChanged();
+        }
     }
 
     private async Task CopyToClipboard()
