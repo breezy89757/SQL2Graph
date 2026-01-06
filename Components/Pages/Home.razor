@@ -1,0 +1,289 @@
+@page "/"
+@using SQL2Graph.Models
+@using SQL2Graph.Services
+@inject SchemaReaderService SchemaReader
+@inject LlmAnalysisService LlmAnalysis
+@inject GraphModelService GraphService
+@inject IJSRuntime JS
+
+<div class="home-container">
+    <!-- Step 1: Connection -->
+    <section class="step-section @(currentStep >= 1 ? "active" : "")">
+        <div class="step-header">
+            <span class="step-number">1</span>
+            <h2>連接 SQL Server</h2>
+        </div>
+        <div class="step-content">
+            <div class="input-group">
+                <label>連線字串</label>
+                <input type="text" @bind="connectionString" placeholder="Server=localhost;Database=YourDB;User Id=sa;Password=xxx;TrustServerCertificate=true" />
+            </div>
+            <button class="btn btn-primary" @onclick="TestConnection" disabled="@isProcessing">
+                @if (isTestingConnection)
+                {
+                    <span class="spinner"></span>
+                    <span>測試中...</span>
+                }
+                else
+                {
+                    <span>🔌 測試連線</span>
+                }
+            </button>
+            @if (!string.IsNullOrEmpty(connectionStatus))
+            {
+                <div class="status-message @(isConnected ? "success" : "error")">
+                    @connectionStatus
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- Step 2: Schema Analysis -->
+    @if (isConnected)
+    {
+        <section class="step-section @(currentStep >= 2 ? "active" : "")">
+            <div class="step-header">
+                <span class="step-number">2</span>
+                <h2>讀取 Schema & LLM 分析</h2>
+            </div>
+            <div class="step-content">
+                <label class="checkbox-label">
+                    <input type="checkbox" @bind="includeSampleData" />
+                    <span>🔍 取樣資料分析（可發現隱藏關係）</span>
+                </label>
+                <button class="btn btn-primary" @onclick="AnalyzeSchema" disabled="@isProcessing">
+                    @if (isAnalyzing)
+                    {
+                        <span class="spinner"></span>
+                        <span>@analysisStatus</span>
+                    }
+                    else
+                    {
+                        <span>🤖 開始分析</span>
+                    }
+                </button>
+                @if (sqlSchema != null)
+                {
+                    <div class="schema-summary">
+                        <span class="badge">📊 @sqlSchema.Tables.Count 張表</span>
+                        <span class="badge">🔗 @sqlSchema.ForeignKeys.Count 個外鍵</span>
+                        @if (includeSampleData)
+                        {
+                            <span class="badge">🎲 含取樣資料</span>
+                        }
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    <!-- Step 3: Results -->
+    @if (analysisResult != null)
+    {
+        <section class="step-section active results-section">
+            <div class="step-header">
+                <span class="step-number">3</span>
+                <h2>Graph Model 結果</h2>
+            </div>
+            
+            <div class="results-container">
+                <!-- Left Panel: SQL Schema -->
+                <div class="panel schema-panel">
+                    <h3>📊 SQL Schema</h3>
+                    <div class="table-list">
+                        @foreach (var table in sqlSchema!.Tables)
+                        {
+                            <div class="table-card @(selectedTable == table.TableName ? "selected" : "")" 
+                                 @onclick="() => SelectTable(table.TableName)">
+                                <div class="table-name">@table.TableName</div>
+                                <div class="column-count">@table.Columns.Count columns</div>
+                                @if (selectedTable == table.TableName)
+                                {
+                                    <div class="column-list">
+                                        @foreach (var col in table.Columns)
+                                        {
+                                            <div class="column-item">
+                                                <span class="col-icon">
+                                                    @if (col.IsPrimaryKey) { <span>🔑</span> }
+                                                    else if (col.IsForeignKey) { <span>🔗</span> }
+                                                </span>
+                                                <span class="col-name">@col.ColumnName</span>
+                                                <span class="col-type">@col.DataType</span>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Center: Graph Visualization -->
+                <div class="panel graph-panel">
+                    <h3>🔮 Graph Model</h3>
+                    <div id="graph-container" class="graph-visualization"></div>
+                    @if (selectedNode != null)
+                    {
+                        <div class="node-details">
+                            <h4>@selectedNode.Label</h4>
+                            <p class="description">@selectedNode.Description</p>
+                            <p class="source">來源: @selectedNode.SourceTable</p>
+                            <div class="properties-list">
+                                @foreach (var prop in selectedNode.Properties)
+                                {
+                                    <div class="prop-item">
+                                        <span class="prop-name">@prop.GraphProperty</span>
+                                        <span class="prop-type">@prop.DataType</span>
+                                        @if (prop.IsKey) { <span class="key-badge">KEY</span> }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    @if (selectedRelationship != null)
+                    {
+                        <div class="relationship-details">
+                            <h4>@selectedRelationship.Type</h4>
+                            <p class="description">@selectedRelationship.Description</p>
+                            <p class="source">@selectedRelationship.FromNode → @selectedRelationship.ToNode</p>
+                            @if (selectedRelationship.IsJoinTable)
+                            {
+                                <span class="join-badge">Join Table</span>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- Right Panel: Cypher Output -->
+                <div class="panel cypher-panel">
+                    <h3>📝 Cypher Scripts</h3>
+                    <div class="tabs">
+                        <button class="tab @(activeTab == "ddl" ? "active" : "")" @onclick='() => activeTab = "ddl"'>DDL</button>
+                        <button class="tab @(activeTab == "etl" ? "active" : "")" @onclick='() => activeTab = "etl"'>ETL</button>
+                        <button class="tab @(activeTab == "reasoning" ? "active" : "")" @onclick='() => activeTab = "reasoning"'>推理</button>
+                    </div>
+                    <div class="code-output">
+                        @if (activeTab == "ddl")
+                        {
+                            <pre><code>@analysisResult.CypherDDL</code></pre>
+                        }
+                        else if (activeTab == "etl")
+                        {
+                            <pre><code>@analysisResult.CypherETL</code></pre>
+                        }
+                        else
+                        {
+                            <div class="reasoning-text">@analysisResult.Reasoning</div>
+                        }
+                    </div>
+                    <button class="btn btn-secondary" @onclick="CopyToClipboard">
+                        📋 複製到剪貼簿
+                    </button>
+                </div>
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    private string connectionString = "";
+    private string connectionStatus = "";
+    private bool isConnected = false;
+    private bool isTestingConnection = false;
+    private bool isAnalyzing = false;
+    private bool isProcessing => isTestingConnection || isAnalyzing;
+    private int currentStep = 1;
+    private bool includeSampleData = true;
+    private string analysisStatus = "分析中，請稍候...";
+
+    private SqlSchema? sqlSchema;
+    private AnalysisResult? analysisResult;
+    private Dictionary<string, List<Dictionary<string, object?>>>? sampleData;
+    
+    private string? selectedTable;
+    private NodeType? selectedNode;
+    private RelationshipType? selectedRelationship;
+    private string activeTab = "ddl";
+
+    private async Task TestConnection()
+    {
+        isTestingConnection = true;
+        StateHasChanged();
+
+        try
+        {
+            var (success, message) = await SchemaReader.TestConnectionAsync(connectionString);
+            isConnected = success;
+            connectionStatus = message;
+            if (success) currentStep = 2;
+        }
+        catch (Exception ex)
+        {
+            connectionStatus = $"錯誤: {ex.Message}";
+            isConnected = false;
+        }
+        finally
+        {
+            isTestingConnection = false;
+        }
+    }
+
+    private async Task AnalyzeSchema()
+    {
+        isAnalyzing = true;
+        StateHasChanged();
+
+        try
+        {
+            // Read schema
+            analysisStatus = "讀取 Schema...";
+            StateHasChanged();
+            sqlSchema = await SchemaReader.ReadSchemaAsync(connectionString);
+            StateHasChanged();
+
+            // Read sample data if enabled
+            if (includeSampleData)
+            {
+                analysisStatus = "取樣資料中...";
+                StateHasChanged();
+                sampleData = await SchemaReader.ReadSampleDataAsync(connectionString, sqlSchema.Tables);
+            }
+
+            // Analyze with LLM
+            analysisStatus = "LLM 分析中...";
+            StateHasChanged();
+            analysisResult = await LlmAnalysis.AnalyzeSchemaAsync(sqlSchema, sampleData);
+            currentStep = 3;
+            StateHasChanged();
+
+            // Initialize visualization
+            await Task.Delay(100); // Wait for DOM
+            var vizData = GraphService.ToVisualizationData(analysisResult.GraphModel);
+            await JS.InvokeVoidAsync("graphVisualizer.init", "graph-container", vizData);
+        }
+        catch (Exception ex)
+        {
+            connectionStatus = $"分析錯誤: {ex.Message}";
+        }
+        finally
+        {
+            isAnalyzing = false;
+        }
+    }
+
+    private void SelectTable(string tableName)
+    {
+        selectedTable = selectedTable == tableName ? null : tableName;
+    }
+
+    private async Task CopyToClipboard()
+    {
+        var content = activeTab switch
+        {
+            "ddl" => analysisResult?.CypherDDL ?? "",
+            "etl" => analysisResult?.CypherETL ?? "",
+            _ => analysisResult?.Reasoning ?? ""
+        };
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", content);
+    }
+}

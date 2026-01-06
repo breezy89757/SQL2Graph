@@ -1,0 +1,23 @@
+@inherits LayoutComponentBase
+
+<div class="app-container">
+    <header class="app-header">
+        <div class="header-top">
+            <div class="logo">🔮</div>
+            <nav class="header-nav">
+                <a href="/" class="nav-link">🏠 首頁</a>
+                <a href="/guide.html" target="_blank" class="nav-link">📖 教學指南</a>
+            </nav>
+        </div>
+        <h1>SQL2Graph</h1>
+        <p class="tagline">LLM-Powered Schema to Graph Converter</p>
+    </header>
+    
+    <main class="app-main">
+        @Body
+    </main>
+    
+    <footer class="app-footer">
+        <p>SQL2Graph | Powered by Azure OpenAI + Neo4j</p>
+    </footer>
+</div>

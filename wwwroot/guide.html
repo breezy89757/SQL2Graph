@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Database 入門指南 🚀</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0f0f1a;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #16213e;
+            --accent-primary: #00d4ff;
+            --accent-secondary: #7c3aed;
+            --accent-tertiary: #f472b6;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --glow-primary: rgba(0, 212, 255, 0.3);
+            --glow-secondary: rgba(124, 58, 237, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, var(--glow-primary) 0%, transparent 70%);
+            top: -100px;
+            right: -100px;
+            animation: float 15s ease-in-out infinite;
+        }
+
+        .bg-animation::after {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--glow-secondary) 0%, transparent 70%);
+            bottom: -200px;
+            left: -200px;
+            animation: float 20s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            33% {
+                transform: translate(50px, -50px) rotate(120deg);
+            }
+
+            66% {
+                transform: translate(-30px, 30px) rotate(240deg);
+            }
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 80px 20px 60px;
+            position: relative;
+        }
+
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Navigation */
+        .nav-pills {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 20px;
+            margin-bottom: 40px;
+            position: sticky;
+            top: 0;
+            background: rgba(15, 15, 26, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .nav-pill {
+            padding: 10px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 25px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-pill:hover {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px var(--glow-primary);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Section Styling */
+        section {
+            margin-bottom: 80px;
+            scroll-margin-top: 100px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .section-icon {
+            font-size: 2.5rem;
+        }
+
+        h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-color: var(--accent-primary);
+        }
+
+        .card h3 {
+            font-size: 1.3rem;
+            color: var(--accent-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card p {
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+
+        /* Grid */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        /* Concept Cards */
+        .concept-card {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .concept-card:hover {
+            transform: scale(1.05);
+            border-color: var(--accent-secondary);
+        }
+
+        .concept-card .icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .concept-card h4 {
+            color: var(--accent-primary);
+            margin-bottom: 10px;
+        }
+
+        .concept-card p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Graph Visualization */
+        .graph-demo {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 40px;
+            margin: 30px 0;
+            overflow: hidden;
+        }
+
+        .graph-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            position: relative;
+        }
+
+        .node {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .node:hover {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        .node.person {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+        }
+
+        .node.product {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+        }
+
+        .node .emoji {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        .edge {
+            position: absolute;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-tertiary));
+            transform-origin: left center;
+            z-index: 1;
+        }
+
+        .edge-label {
+            position: absolute;
+            background: var(--bg-card);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--accent-tertiary);
+            border: 1px solid var(--accent-tertiary);
+            z-index: 3;
+        }
+
+        /* SVG Graph Edges */
+        .graph-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .graph-edge {
+            stroke-width: 0.5;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+        }
+
+        .graph-edge.highlight {
+            stroke-width: 1;
+            opacity: 1;
+            filter: drop-shadow(0 0 8px currentColor);
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            background: var(--bg-secondary);
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        .comparison-table tr:hover {
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .comparison-table td:first-child {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #1e1e2e;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            overflow-x: auto;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .code-lang {
+            color: var(--accent-secondary);
+            font-weight: 500;
+        }
+
+        .code-block code {
+            color: var(--text-secondary);
+        }
+
+        .code-block .keyword {
+            color: #c678dd;
+        }
+
+        .code-block .function {
+            color: #61afef;
+        }
+
+        .code-block .string {
+            color: #98c379;
+        }
+
+        .code-block .comment {
+            color: #5c6370;
+        }
+
+        .code-block .property {
+            color: #e5c07b;
+        }
+
+        /* Use Case Cards */
+        .use-case {
+            background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary));
+            border-radius: 12px;
+            padding: 25px;
+            border-left: 4px solid var(--accent-primary);
+            transition: all 0.3s ease;
+        }
+
+        .use-case:hover {
+            border-left-color: var(--accent-tertiary);
+            transform: translateX(10px);
+        }
+
+        .use-case h4 {
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .use-case p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Tool Cards */
+        .tool-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tool-card:hover {
+            border-color: var(--accent-success);
+            transform: translateY(-5px);
+        }
+
+        .tool-card .tool-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .tool-card h4 {
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .tool-card p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+
+        .badge.official {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-success);
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            border-radius: 3px;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -34px;
+            top: 25px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            box-shadow: 0 0 20px var(--glow-primary);
+        }
+
+        .timeline-item h4 {
+            color: var(--accent-primary);
+            margin-bottom: 8px;
+        }
+
+        .timeline-item p {
+            color: var(--text-secondary);
+        }
+
+        /* Highlight Box */
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(0, 212, 255, 0.1));
+            border: 1px solid var(--accent-secondary);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+
+        .highlight-box h3 {
+            color: var(--accent-secondary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Flow Chart */
+        .flow-chart {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding: 30px;
+        }
+
+        .flow-step {
+            background: var(--bg-card);
+            border-radius: 10px;
+            padding: 15px 25px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .flow-step.highlight {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px var(--glow-primary);
+        }
+
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: var(--accent-primary);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 60px 20px;
+            background: var(--bg-secondary);
+            margin-top: 80px;
+        }
+
+        footer p {
+            color: var(--text-muted);
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 600;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px var(--glow-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .logo {
+                font-size: 3rem;
+            }
+
+            header {
+                padding: 40px 20px;
+            }
+
+            .nav-pills {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .graph-container {
+                min-height: 400px;
+            }
+
+            .node {
+                width: 80px;
+                height: 80px;
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-animation"></div>
+
+    <header>
+        <div class="logo">🔮</div>
+        <h1>Graph Database 入門指南</h1>
+        <p class="subtitle">深入淺出圖資料庫 — 掌握節點、關係與高效查詢的完整指南</p>
+    </header>
+
+    <nav class="nav-pills">
+        <a href="#what-is-graph" class="nav-pill">📊 什麼是 Graph DB</a>
+        <a href="#core-concepts" class="nav-pill">🧩 核心概念</a>
+        <a href="#comparison" class="nav-pill">⚖️ 資料庫比較</a>
+        <a href="#use-cases" class="nav-pill">🎯 應用場景</a>
+        <a href="#tools" class="nav-pill">🛠️ 查詢工具</a>
+        <a href="#migration" class="nav-pill">🔄 遷移指南</a>
+        <a href="#future" class="nav-pill">🚀 未來趨勢</a>
+    </nav>
+
+    <main class="container">
+        <!-- What is Graph DB -->
+        <section id="what-is-graph">
+            <div class="section-header">
+                <span class="section-icon">📊</span>
+                <h2>什麼是 Graph Database？</h2>
+            </div>
+
+            <div class="card">
+                <p>Graph Database（圖資料庫）是一種以 <strong>節點（Nodes）</strong> 和 <strong>關係（Relationships）</strong>
+                    為核心來儲存和查詢資料的資料庫。它特別擅長處理彼此之間有複雜連結的資料！</p>
+            </div>
+
+
+            <div class="graph-demo">
+                <h3 style="text-align: center; margin-bottom: 30px; color: var(--accent-primary);">🎮 互動式 Graph 示意圖</h3>
+                <div class="graph-container" id="graphContainer">
+                    <!-- SVG for edges -->
+                    <svg class="graph-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                        <defs>
+                            <linearGradient id="edgeGradient1" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#00d4ff" />
+                                <stop offset="100%" style="stop-color:#f472b6" />
+                            </linearGradient>
+                            <linearGradient id="edgeGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#7c3aed" />
+                                <stop offset="100%" style="stop-color:#10b981" />
+                            </linearGradient>
+                        </defs>
+                        <!-- Alice - Bob (FRIENDS_WITH) -->
+                        <line class="graph-edge" x1="20" y1="25" x2="75" y2="20" stroke="url(#edgeGradient1)"
+                            data-from="alice" data-to="bob" />
+                        <!-- Alice - iPhone (PURCHASED) -->
+                        <line class="graph-edge" x1="20" y1="30" x2="15" y2="65" stroke="url(#edgeGradient2)"
+                            data-from="alice" data-to="iphone" />
+                        <!-- Bob - MacBook (PURCHASED) -->
+                        <line class="graph-edge" x1="75" y1="25" x2="80" y2="70" stroke="url(#edgeGradient2)"
+                            data-from="bob" data-to="macbook" />
+                        <!-- Alice - Charlie (KNOWS) -->
+                        <line class="graph-edge" x1="22" y1="30" x2="47" y2="52" stroke="url(#edgeGradient1)"
+                            data-from="alice" data-to="charlie" />
+                        <!-- Bob - Charlie (KNOWS) -->
+                        <line class="graph-edge" x1="73" y1="25" x2="52" y2="52" stroke="url(#edgeGradient1)"
+                            data-from="bob" data-to="charlie" />
+                    </svg>
+
+                    <!-- Nodes -->
+                    <div class="node person" id="node-alice" style="left: 15%; top: 20%;" data-node="alice">
+                        <span class="emoji">👩</span>
+                        <span>Alice</span>
+                    </div>
+                    <div class="node person" id="node-bob" style="left: 70%; top: 15%;" data-node="bob">
+                        <span class="emoji">👨</span>
+                        <span>Bob</span>
+                    </div>
+                    <div class="node product" id="node-iphone" style="left: 10%; top: 65%;" data-node="iphone">
+                        <span class="emoji">📱</span>
+                        <span>iPhone</span>
+                    </div>
+                    <div class="node product" id="node-macbook" style="left: 75%; top: 70%;" data-node="macbook">
+                        <span class="emoji">💻</span>
+                        <span>MacBook</span>
+                    </div>
+                    <div class="node person" id="node-charlie" style="left: 42%; top: 50%;" data-node="charlie">
+                        <span class="emoji">👤</span>
+                        <span>Charlie</span>
+                    </div>
+
+                    <!-- Edge Labels -->
+                    <div class="edge-label" style="left: 45%; top: 12%;">FRIENDS_WITH</div>
+                    <div class="edge-label" style="left: 3%; top: 45%;">PURCHASED</div>
+                    <div class="edge-label" style="left: 78%; top: 48%;">PURCHASED</div>
+                    <div class="edge-label" style="left: 22%; top: 38%;">KNOWS</div>
+                    <div class="edge-label" style="left: 58%; top: 32%;">KNOWS</div>
+                </div>
+                <p style="text-align: center; color: var(--text-muted); margin-top: 20px;">
+                    💡 滑鼠移到節點上，看看關聯的連線會發亮！
+                </p>
+            </div>
+        </section>
+
+        <!-- Core Concepts -->
+        <section id="core-concepts">
+            <div class="section-header">
+                <span class="section-icon">🧩</span>
+                <h2>核心概念</h2>
+            </div>
+
+            <div class="grid-4">
+                <div class="concept-card">
+                    <div class="icon">🔵</div>
+                    <h4>Node 節點</h4>
+                    <p>代表實體，如：人、產品、地點</p>
+                </div>
+                <div class="concept-card">
+                    <div class="icon">↔️</div>
+                    <h4>Relationship 關係</h4>
+                    <p>連接節點，有方向和類型</p>
+                </div>
+                <div class="concept-card">
+                    <div class="icon">🏷️</div>
+                    <h4>Property 屬性</h4>
+                    <p>節點或關係的 key-value 資料</p>
+                </div>
+                <div class="concept-card">
+                    <div class="icon">📌</div>
+                    <h4>Label 標籤</h4>
+                    <p>節點的分類，如：Person、Product</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Comparison -->
+        <section id="comparison">
+            <div class="section-header">
+                <span class="section-icon">⚖️</span>
+                <h2>與其他資料庫比較</h2>
+            </div>
+
+            <div class="card">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>特性</th>
+                            <th>MSSQL</th>
+                            <th>MongoDB</th>
+                            <th>Vector DB</th>
+                            <th>Graph DB</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>資料模型</td>
+                            <td>Tables + Rows</td>
+                            <td>JSON Documents</td>
+                            <td>Vectors</td>
+                            <td>Nodes + Relations</td>
+                        </tr>
+                        <tr>
+                            <td>擅長領域</td>
+                            <td>結構化資料、交易</td>
+                            <td>彈性 Schema</td>
+                            <td>相似度搜尋</td>
+                            <td>複雜關係查詢 ⭐</td>
+                        </tr>
+                        <tr>
+                            <td>關係處理</td>
+                            <td>JOIN (成本高)</td>
+                            <td>手動管理</td>
+                            <td>不適用</td>
+                            <td>原生支援，超快 🚀</td>
+                        </tr>
+                        <tr>
+                            <td>典型查詢</td>
+                            <td>訂單總額</td>
+                            <td>用戶的文章</td>
+                            <td>相似文件</td>
+                            <td>朋友的朋友買了什麼</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="highlight-box">
+                <h3>💡 為什麼 Graph 比 JOIN 快？</h3>
+                <p>關聯式資料庫用 JOIN 處理關係，層數越多越慢（指數級）。Graph DB 使用 <strong>index-free adjacency</strong>，直接「走」到相鄰節點，效能穩定！</p>
+            </div>
+
+            <div class="grid-2">
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">T-SQL (MSSQL)</span>
+                        <span>😰 複雜</span>
+                    </div>
+                    <code>
+<span class="keyword">SELECT DISTINCT</span> p.ProductName
+<span class="keyword">FROM</span> Users u1
+<span class="keyword">JOIN</span> Friendships f1 <span class="keyword">ON</span> u1.Id = f1.UserId
+<span class="keyword">JOIN</span> Friendships f2 <span class="keyword">ON</span> f1.FriendId = f2.UserId
+<span class="keyword">JOIN</span> Purchases pu <span class="keyword">ON</span> f2.FriendId = pu.UserId
+<span class="keyword">JOIN</span> Products p <span class="keyword">ON</span> pu.ProductId = p.Id
+<span class="keyword">WHERE</span> u1.Name = <span class="string">'Alice'</span>
+                    </code>
+                </div>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">Cypher (Neo4j)</span>
+                        <span>😊 簡潔</span>
+                    </div>
+                    <code>
+<span class="keyword">MATCH</span> (alice:<span class="function">Person</span> {name: <span class="string">'Alice'</span>})
+      -[:<span class="property">FRIENDS_WITH</span>*2]->
+      (fof)-[:<span class="property">PURCHASED</span>]->(product)
+<span class="keyword">RETURN DISTINCT</span> product.name
+                    </code>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section id="use-cases">
+            <div class="section-header">
+                <span class="section-icon">🎯</span>
+                <h2>殺手級應用場景</h2>
+            </div>
+
+            <div class="grid-2">
+                <div class="use-case">
+                    <h4>👥 社群網路分析</h4>
+                    <p>朋友的朋友、影響力分析、社群偵測</p>
+                </div>
+                <div class="use-case">
+                    <h4>🛒 推薦系統</h4>
+                    <p>「買了這個的人也買了...」「你可能認識...」</p>
+                </div>
+                <div class="use-case">
+                    <h4>🔍 詐欺偵測</h4>
+                    <p>找出可疑的交易網路和關聯模式</p>
+                </div>
+                <div class="use-case">
+                    <h4>🧠 知識圖譜 (Knowledge Graph)</h4>
+                    <p>Google Search、企業知識管理、GraphRAG + LLM</p>
+                </div>
+                <div class="use-case">
+                    <h4>🌐 網路基礎設施</h4>
+                    <p>服務依賴關係、影響分析</p>
+                </div>
+                <div class="use-case">
+                    <h4>🧬 生物資訊</h4>
+                    <p>蛋白質交互、藥物發現、基因網路</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tools -->
+        <section id="tools">
+            <div class="section-header">
+                <span class="section-icon">🛠️</span>
+                <h2>查詢工具（就像 SSMS！）</h2>
+            </div>
+
+            <div class="card">
+                <p>每個主流 Graph DB 都有圖形化查詢工具，可以直接輸入查詢語法執行，就像你熟悉的 SSMS 或 Azure Data Studio！</p>
+            </div>
+
+            <div class="grid-4">
+                <div class="tool-card">
+                    <div class="tool-icon">🌐</div>
+                    <h4>Neo4j Browser</h4>
+                    <p>Web UI，視覺化結果</p>
+                    <span class="badge official">官方工具</span>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon">🖥️</div>
+                    <h4>Neo4j Desktop</h4>
+                    <p>桌面應用，功能完整</p>
+                    <span class="badge official">官方工具</span>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon">☁️</div>
+                    <h4>Azure Data Explorer</h4>
+                    <p>Cosmos DB Gremlin</p>
+                    <span class="badge official">官方工具</span>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon">📓</div>
+                    <h4>Neptune Workbench</h4>
+                    <p>AWS Jupyter 環境</p>
+                    <span class="badge official">官方工具</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Migration -->
+        <section id="migration">
+            <div class="section-header">
+                <span class="section-icon">🔄</span>
+                <h2>從 MSSQL 遷移</h2>
+            </div>
+
+            <div class="card">
+                <h3>🎯 官方遷移工具</h3>
+                <div class="grid-2" style="margin-top: 20px;">
+                    <div class="tool-card">
+                        <div class="tool-icon">⚡</div>
+                        <h4>Neo4j ETL Tool</h4>
+                        <p>圖形化介面，自動分析 Schema，拖拉設計 Graph 模型</p>
+                        <span class="badge official">最推薦</span>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-icon">📦</div>
+                        <h4>neo4j-admin import</h4>
+                        <p>命令列工具，適合大量資料批次匯入</p>
+                        <span class="badge official">高效能</span>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-icon">🔌</div>
+                        <h4>APOC + JDBC</h4>
+                        <p>直接用 Cypher 從 MSSQL 讀取資料</p>
+                        <span class="badge official">程式化</span>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-icon">☁️</div>
+                        <h4>Azure Migration Tool</h4>
+                        <p>微軟官方，支援多種來源到 Cosmos DB</p>
+                        <span class="badge official">Azure 整合</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <h3>⚠️ 重要提醒</h3>
+                <p>不是 1:1 轉換！關聯式和 Graph 思維不同。<strong>Join Table（多對多）</strong>通常會變成 <strong>Relationship +
+                        屬性</strong>，而不是節點。</p>
+            </div>
+
+            <div class="card">
+                <h3>📋 轉換規則</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>關聯式結構</th>
+                            <th>Graph 結構</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Table（無 FK）</td>
+                            <td>→ Node（節點）</td>
+                        </tr>
+                        <tr>
+                            <td>Foreign Key</td>
+                            <td>→ Relationship（關係）</td>
+                        </tr>
+                        <tr>
+                            <td>Join Table（多對多）</td>
+                            <td>→ Relationship + 屬性</td>
+                        </tr>
+                        <tr>
+                            <td>Column</td>
+                            <td>→ Property（屬性）</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Future Trends -->
+        <section id="future">
+            <div class="section-header">
+                <span class="section-icon">🚀</span>
+                <h2>未來趨勢：LLM + Graph</h2>
+            </div>
+
+            <div class="card">
+                <h3>🤖 ETL 工具怎麼分析 Schema？</h3>
+                <p>目前的 ETL 工具使用 <strong>規則式（Rule-based）分析</strong>，不是 LLM：</p>
+
+                <div class="timeline" style="margin-top: 30px;">
+                    <div class="timeline-item">
+                        <h4>Step 1: 讀取 Metadata</h4>
+                        <p>從 INFORMATION_SCHEMA 讀取表結構、欄位、FK</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h4>Step 2: 套用轉換規則</h4>
+                        <p>Table → Node、FK → Relationship、Join Table → 關係屬性</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h4>Step 3: 判斷 Join Table</h4>
+                        <p>如果表只有 2 個 FK + 少量業務欄位 → 視為關係表</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box"
+                style="background: linear-gradient(135deg, rgba(244, 114, 182, 0.1), rgba(124, 58, 237, 0.1)); border-color: var(--accent-tertiary);">
+                <h3 style="color: var(--accent-tertiary);">🔮 未來趨勢：LLM 輔助</h3>
+                <p>未來可能用 LLM 來：</p>
+                <ul style="margin-top: 15px; margin-left: 20px; color: var(--text-secondary);">
+                    <li>理解表名和欄位的 <strong>語意</strong>（tbl_usr → Person）</li>
+                    <li>建議更好的 <strong>Graph 模型設計</strong></li>
+                    <li>結合 <strong>領域知識</strong> 做智能轉換</li>
+                    <li><strong>Text2Cypher</strong>：自然語言 → Graph 查詢</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>🧠 GraphRAG：Graph + LLM 的結合</h3>
+                <div class="flow-chart">
+                    <div class="flow-step">📄 文件</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step highlight">🤖 LLM 抽取實體</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">🔮 知識圖譜</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step highlight">🧠 Graph + RAG</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">✨ 精準回答</div>
+                </div>
+                <p style="text-align: center; color: var(--text-muted); margin-top: 15px;">
+                    比傳統向量 RAG 更適合需要多步推理的場景！
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Graph Database 入門指南 | 開源知識分享</p>
+        <p style="margin-top: 10px;">📚 讓複雜的關係查詢變得簡單</p>
+        <a href="https://neo4j.com/download/" target="_blank" class="cta-button">下載 Neo4j 開始體驗</a>
+    </footer>
+
+    <script>
+        // Smooth scroll for navigation
+        document.querySelectorAll('.nav-pill').forEach(pill => {
+            pill.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = document.querySelector(pill.getAttribute('href'));
+                target.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        // Add animation on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'all 0.6s ease-out';
+            observer.observe(section);
+        });
+
+        // Graph node hover - highlight connected edges
+        document.querySelectorAll('.node').forEach(node => {
+            node.addEventListener('mouseenter', () => {
+                const nodeId = node.dataset.node;
+                document.querySelectorAll('.graph-edge').forEach(edge => {
+                    if (edge.dataset.from === nodeId || edge.dataset.to === nodeId) {
+                        edge.classList.add('highlight');
+                    }
+                });
+            });
+
+            node.addEventListener('mouseleave', () => {
+                document.querySelectorAll('.graph-edge').forEach(edge => {
+                    edge.classList.remove('highlight');
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

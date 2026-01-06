@@ -1,0 +1,21 @@
+# .NET
+bin/
+obj/
+*.user
+*.userosscache
+*.suo
+
+# IDE
+.vs/
+.vscode/
+*.swp
+
+# Dependencies
+node_modules/
+
+# Config with secrets
+appsettings.json
+appsettings.Development.json
+
+# Build
+publish/
