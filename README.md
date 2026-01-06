@@ -114,7 +114,7 @@ docker run -d --name neo4j \
 |------|------|
 | 前端 | Blazor Server |
 | 視覺化 | Cytoscape.js |
-| LLM | Azure OpenAI (GPT-4o) |
+| LLM | Azure OpenAI (GPT-5.2) |
 | 資料庫 | MSSQL (來源) → Neo4j (目標) |
 
 ---
